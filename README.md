@@ -5,3 +5,10 @@ Jan Zeman<sup>1</sup>
 <sup>1</sup> Faculty of Civil Engineering, Czech Technical University in Prague
 
 <sup>2</sup> Department of Microsystems Engineering, University of Freiburg
+
+## Example 3.1 
+In the following numerical example we show preconditioning of the diffusion-reaction problem where $\Omega=(0,1)\times (0,1)$,
+
+![Alt text](URL "Optional title")
+
+$c=1$, $c_{\rm p}=1$, $f=10$.
