@@ -4,14 +4,15 @@ function  Fce_hom_1
 
 % close all
 clear all;
+clc;
 Uniform = 1; % 1=uniform or 0=nonuniform (so far 1 is working only)
 toler = 1e-8;
 max_steps = 5000;
 % sigma = 10;
 L1 = 1; L2 = 1; 
-plot_fig = 1; % do we wish to plot graphs? 0 or 1
+plot_fig = 0; % do we wish to plot graphs? 0 or 1
 
-Nintervals = 20;
+Nintervals = 10; %%% = 1/h
 
 NNN = ones(2,1)*Nintervals; 
 N1 = NNN(1); N2 = NNN(2); % numbers of intervals
@@ -69,8 +70,8 @@ for kk = 1:Nele
     derr = [der(1,:);der(2,:)]; 
     pom = derr'*aa*derr;
     pomp = derr'*aap*derr;
-    Apom = pom*dd + rr*[2,1,1;1,2,1;1,1,2]*h1*h2/24;  % ? correct
-    APpom = pomp*dd + rrp*[2,1,1;1,2,1;1,1,2]*h1*h2/24;  % ? correct
+    Apom = pom*dd + rr*[2,1,1;1,2,1;1,1,2]*h1*h2/24;  %
+    APpom = pomp*dd + rrp*[2,1,1;1,2,1;1,1,2]*h1*h2/24;  % 
     A(kde,kde) = A(kde,kde) + Apom;
     AP(kde,kde) = AP(kde,kde) + APpom;
     B(kde) = B(kde)+ff*dd/6;
@@ -95,7 +96,7 @@ for kk = 1:Nele
     pom8p = sort(eig(APpom));  
 %     if (min(pom8)<-0.0001  || min(pom8p)<-0.0001) 
     if (min(pom8p)<-0.0001)     
-       disp('=========== chyba ============');  
+       disp('=========== error ============');  
        [pom8,pom8p]
        APpom
        return; end;   
@@ -156,7 +157,7 @@ eigA = sort(real(eig(A)));
 eigPA = sort(real(eig(inv(AP)*A)));
 conditionA = max(eigA)/min(eigA)
 conditionPA = max(eigPA)/min(eigPA)
-conditionPAbound = max(upp2)/min(low2)
+conditionPA_bound = max(upp2)/min(low2)
 
 if (plot_fig==1)
     subplot(2,2,2); % real part of the spectrum of P^(-1)A
@@ -197,7 +198,7 @@ end;
 
 maxBeig = max(imag(eig(Nav))) % max imag part of the eigenvalues of B
 maxPBeig = my1 % max imag part of the eigenvalues of P(-1)B
-maxPBeig_estim = max(imag_max2) % bound to imag parts of the eigenvalues of P(-1)B
+maxPBeig_bound = max(imag_max2) % bound to imag parts of the eigenvalues of P(-1)B
 
 n = max(size(A));
 tic;
@@ -206,10 +207,9 @@ tA = toc;
 tic;
 [x,flagPA2,relres,iterPA2] = gmres(A+Nav,B,[],toler,n,AP);
 tPA2 = toc;
-flags12 = [flagA,flagPA2]
-iter12 = [iterA,iterPA2]
+flags12 = [flagA,flagPA2];
+iterationsGandPG = [iterA,iterPA2]
 times12 = [tA,tPA2];
-
  
 
 %============================================================
@@ -222,7 +222,7 @@ y = [20-2*x2,0;0,3-2*x1];
 
 function y = FAP(x1,x2)
 y = [19,0;0,2];
-% y = [1,0;0,1];
+y = [1,0;0,1];
 
 function y = FR(x1,x2) % reaction coefficient
 y = 10;

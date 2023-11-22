@@ -6,20 +6,18 @@ function  Fce_abc
 
 % close all
 clear all;
-clc;
+poradi_kresleni = 3; % choose the column in the figure and various functions FA and FAP !!
 
 Uniform = 1; % 1=uniform or 0=nonuniform (so far 1 is working only)
-toler = 1e-6;
-max_steps = 50000; % for CG
+toler = 1e1; % tolerance - not needed here; we only draw spectra and their bounds
+max_steps = 500;
 L1 = 1; L2 = 1; 
-c_sigma = 2;  % sigma_p for the original problem ( >=1)
-c_sigma_p = 2; % sigma_p for preconditioning problem ( >=1)
-% WARNING: if the reaction term 
+c_sigma = 2;  % sigma_p for the original problem ( >=2)
+c_sigma_p = 2; % sigma_p for preconditioning problem ( >=2)
 
-NNNNN = 10
+Nintervals = 10
 
-NNN = ones(2,1)*NNNNN; % number of intervals in every direction (2D)
-
+NNN = ones(2,1)*Nintervals; % number of intervals in every direction (2D)
 N1 = NNN(1); N2 = NNN(2); % number of intervals
 x1 = linspace(0,L1,N1+1);
 x2 = linspace(0,L2,N2+1);
@@ -105,7 +103,7 @@ if (bnodes(k)==1) A(k,:) = []; A(:,k) = []; B(k) = [];
     APc1(k,:) = [];  APc2(k,:) = [];
 end;
 end;
-% possibly better lower and upper bounds: 
+% maybe better lower and upper bounds: 
  y = ContGalBounds(elem,Nele,Nnod,bnodes,low1,upp1,Ninner);
  low3 = y(1:Ninner,1);
  upp3 = y(1:Ninner,2);
@@ -119,24 +117,28 @@ U2(2:N1,2:N2) = U1';
 % surf(X1,X2,U2); 
 % title('Cont G solution')
 % view(15,15);
-% subplot(2,2,2);
-% cla; hold on;
+
+subplot(2,3,poradi_kresleni);
+cla; hold on;
 eigA = sort(real(eig(A)));
 eigPA = sort(real(eig(inv(AP)*A)));
 conditionA = max(eigA)/min(eigA)
 conditionPA = max(eigPA)/min(eigPA)
-% plot(sort(upp2),'b');
-% plot(eigPA,'k.');
-% plot(sort(low2),'r');
+plot(sort(upp2),'b','LineWidth',2);
+plot(eigPA,'k.');
+plot(sort(low2),'r','LineWidth',2);
+axis([0,max(size(upp2)),0,max(upp2)+0.5])
 % plot(low3(1:(N1-1)*(N2-1)),'k--');
 % plot(upp3((N1-1)*(N2-1):-1:1),'k--');
-% title('Cont G: eig of P^{-1}A and bounds');
+k = 5;
+ccc = strcat("Galerkin, Test ",num2str(poradi_kresleni))
+title(ccc)
+if (poradi_kresleni==2) legend('\gamma_{max}','\sigma(P_{G}^{-1}A_G)','\gamma_{min}');end;
 conditionPAbound = max(upp2)/min(low2)
 
 [x,flag,relres,iterPG]  = cgs(A,B,toler,max_steps,AP);
 [x,flag,relres,iterG]  = cgs(A,B,toler,max_steps);
 iteraceGaPG = [iterG,iterPG]
-
 
 
 % discontinuous Galerkin: =============================================
@@ -212,8 +214,8 @@ for kk = 1:Nedg
         % penalty term:
         lam_aL = real(eig(aa1));        
         lam_pL = real(eig(pp1));        
-        sigmaloc = 12/de*(max(lam_aL)^2/min(lam_aL) ) *  c_sigma;
-        sigmaloc_p = 12/de*(max(lam_pL)^2/min(lam_pL) )  * c_sigma_p;    
+        sigmaloc = 6/de*(max(lam_aL)^2/min(lam_aL) ) *  c_sigma;
+        sigmaloc_p = 6/de*(max(lam_pL)^2/min(lam_pL) )  * c_sigma_p;    
 
         pom7 = [2,1;1,2]*de/6; % integrals of [[u]][[v]] 
 
@@ -225,9 +227,9 @@ for kk = 1:Nedg
         pom8 = sort(real(eig(Apom)));  
         pom8p = sort(real(eig(APpom)));  
         if (min(pom8)<-0.0000001  || min(pom8p)<-0.000001) 
-            disp('=========== error ============'); % wrong choice of c_sigma
-            [pom8,pom8p]
-            kk
+        disp('=========== chyba ============'); 
+        [pom8,pom8p]
+        kk
         return; end;
         if (pom8(1)<minAeig) minAeig = pom8(1); end;
         if (pom8(end)>maxAeig) maxAeig = pom8(end); end;
@@ -258,13 +260,13 @@ for kk = 1:Nedg
     aa1 = FA(cen1(1),cen1(2)); 
     pp1 = FAP(cen1(1),cen1(2));
     ff1 = FF(cen1(1),cen1(2)); 
-    % derr1 = [der1(1,:);der1(2,:)]; 
+%     derr1 = [der1(1,:);der1(2,:)]; 
     pom1 = derr1'*aa1*derr1;
     pom1p = derr1'*pp1*derr1;
     ADG(dof1,dof1) = ADG(dof1,dof1) + pom1*dd1/3;
     APDG(dof1,dof1) = APDG(dof1,dof1) + pom1p*dd1/3;
     BDG(dof1) = BDG(dof1) + ff1*dd1/6/3;   
-    % element2 integral 1/3:    
+   % element2 integral 1/3:    
     dd2 = abs(det([point2(1,:)-point2(3,:);point2(2,:)-point2(3,:)]))/2;
     nod2 = [point2,ones(3,1)];
     der2 = inv(nod2);
@@ -272,7 +274,7 @@ for kk = 1:Nedg
     aa2 = FA(cen2(1),cen2(2)); 
     pp2 = FAP(cen2(1),cen2(2)); 
     ff2 = FF(cen2(1),cen2(2));
-    % derr2 = [der2(1,:);der2(2,:)]; 
+%     derr2 = [der2(1,:);der2(2,:)]; 
     pom2 = derr2'*aa2*derr2;
     pom2p = derr2'*pp2*derr2;
     ADG(dof2,dof2) = ADG(dof2,dof2) + pom2*dd2/3;
@@ -316,17 +318,17 @@ for kk = 1:Nedg
     fluxP = -(pom1p*pom2+pom2'*pom1p')*de;    
     
     ADG([dof1,dof2],[dof1,dof2]) = ADG([dof1,dof2],[dof1,dof2]) + flux;
-    APDG([dof1,dof2],[dof1,dof2]) = APDG([dof1,dof2],[dof1,dof2]) + fluxP; % !!!
+      APDG([dof1,dof2],[dof1,dof2]) = APDG([dof1,dof2],[dof1,dof2]) + fluxP; % !!!
     Apom = Apom + flux;    
-    APpom = APpom + fluxP;  
+      APpom = APpom + fluxP;  % !!!
 
   % penalty term:
   lam_aL = real(eig(aa1));
   lam_aR = real(eig(aa2));
   lam_pL = real(eig(pp1));
   lam_pR = real(eig(pp2));
-  sigmaloc = 6/de*(max(lam_aL)^2/min(lam_aL) + max(lam_aR)^2/min(lam_aR)) * c_sigma;
-  sigmaloc_p = 6/de*(max(lam_pL)^2/min(lam_pL) + max(lam_pR)^2/min(lam_pR))  * c_sigma_p;
+  sigmaloc = 3/de*(max(lam_aL)^2/min(lam_aL) + max(lam_aR)^2/min(lam_aR)) * c_sigma;
+  sigmaloc_p = 3/de*(max(lam_pL)^2/min(lam_pL) + max(lam_pR)^2/min(lam_pR))  * c_sigma_p;
 
     pom7 = [2,1,-2,-1;1,2,-1,-2;-2,-1,2,1;-1,-2,1,2]*de/6; % integrals of [[u]][[v]]   
 
@@ -394,10 +396,8 @@ conditionADG = eigADG(end)/eigADG(1)
 PreDG = inv(APDG)*ADG;
 conditionPPP_ADG = eigPDG(end)/eigPDG(1)
 
-% subplot(2,2,4);
-% cla; hold on;
-% plot(eigPDG,'k.');
-% title('DG: eig of P^{-1}A and bounds');
+
+
 
 % eigen-bounds:
 elower = zeros(Ndof,1)+1e8;
@@ -424,8 +424,18 @@ for kk = Ndof:-1:1
     end;
 end;
 
-% plot(sort(elower),'r');
-% plot(sort(eupper),'b');
+subplot(2,3,poradi_kresleni+3);
+cla; hold on;
+
+plot(sort(eupper),'b','LineWidth',2);
+plot(eigPDG,'k.');
+plot(sort(elower),'r','LineWidth',2);
+axis([0,max(size(eupper)),0,max(eupper)+0.5])
+ccc = strcat("DG, Test ",num2str(poradi_kresleni));
+title(ccc);
+if (poradi_kresleni==2) 
+    legend('\gamma_{max}','\sigma(P_{DG}^{-1}A_{DG})','\gamma_{min}');end;
+
 conditionPPP_ADG_bound = max(eupper)/min(elower)
 tic;
 [x,flag,relres,iterPDG]  = cgs(ADG,BDG,toler,max_steps,APDG);
@@ -434,7 +444,14 @@ tic;
 [x,flag,relres,iterDG]  = cgs(ADG,BDG,toler,max_steps);
 casDG = toc;
 iterDGandPDG = [iterDG,iterPDG]
-% timeDGandPDG = [casDG,casPDG]
+timeDGandPDG = [casDG,casPDG]
+
+Ginfo = [conditionA,conditionPA,conditionPAbound]
+iterG = iteraceGaPG
+DGinfo = [conditionADG,conditionPPP_ADG,conditionPPP_ADG_bound]
+iterDG = iterDGandPDG
+timeDGandPDG
+
 
 
 %============================================================
@@ -443,19 +460,21 @@ iterDGandPDG = [iterDG,iterPDG]
 %============================================================
 
 function y = FA(x1,x2) % diffusion coefficient
-y = [3.01+3*sin(x1*x2*pi)/1,0;0,1.01+sin(x1*x2*pi)/1];
+% y = [3.01+3*sin(x1*x2*pi)/1,0;0,1.01+sin(x1*x2*pi)/1];
+y = [1,0;0,1];
+if (x1>0.5) y = [5,0;0,5]; end;
 % y = [1,0;0,1];
-% if (x1>0.5) y = [5,0;0,10]; end;
+% if ((x1-0.5)^2+(x2-0.5)^2<0.1) y = [1,0;0,1]*2; end;
 
 function y = FAP(x1,x2) % preconditioning diffusion coefficient
+y = [3,0;0,1];
 y = [1,0;0,1];
-% y = [3,0;0,1];
 
 function y = FR(x1,x2) % reaction coefficient
-y = 1;
+y = 0;
 
 function y = FRP(x1,x2) % reaction coefficient
-y = 1;
+y = 0;
 
 function y = FF(x1,x2) % right hand side
 y = 10;
@@ -557,6 +576,7 @@ for kk = 1:Nele
     if (sum(elem_eig(kk,:))==0) low1(kk)=100000; upp1(kk)=-1; end;
 end;
 % low1
+% return
 for jj = 1:Nnod       
     [vL,eL] = min(low1);
     low3(jj) = vL;
